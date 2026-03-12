@@ -1,0 +1,9 @@
+# Steam client requires user-namespace
+NESTED=1
+
+#EXTRA_SHARES+=(/mnt/external_game_db)
+
+# Steam client requires the following dbus names
+DBUS_PROXY_SESSION_OPTIONS+=(
+    --own='com.steampowered.PressureVessel.LaunchAlongsideSteam.*'
+)

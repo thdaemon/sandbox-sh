@@ -1,0 +1,231 @@
+= sandbox.sh(1)
+:doctype: manpage
+:manmanual: sandbox-sh Manual
+:mansource: sandbox-sh
+
+== NAME
+
+sandbox.sh - unprivileged sandbox bootstrapper powered by bubblewrap and xdg-dbus-proxy
+
+== SYNOPSIS
+
+*sandbox.sh* [OPTIONS] [-n] _sandbox-name_ [--] [command...]
+
+== DESCRIPTION
+
+*sandbox.sh* starts a new sandboxed environment using Bubblewrap and
+xdg-dbus-proxy. It focuses on practical desktop sandboxing: sharing GUI sockets
+(X11/Wayland), audio, DRI, and user-specified paths while keeping a minimal
+filesystem view. Configuration is loaded from a global user file and an
+optional per-sandbox file.
+
+By default, *sandbox.sh*:
+
+- Creates a sandbox home at `~/Sandbox/<sandbox name>` and binds it to `$HOME`
+  inside the sandbox.
+- Uses a filtered D-Bus proxy (not raw sockets).
+- Shares X11, Wayland, DRI, and audio if the corresponding host sockets exist.
+- Runs `$SHELL -l` in current session (see *--no-new-session*).
+
+== OPTIONS
+
+*-n*, *--name* _name_::
+Sandbox name. If the leading `-n` is omitted, it must appear last among options.
+
+*-s*, *--share* _dir_::
+Share a host directory read-write. (Can be specified multiple times)
+
+*--ro-share* _dir_::
+Share a host directory read-only. (Can be specified multiple times)
+
+*-D*, *--share-raw-dbus*::
+Share unfiltered D-Bus sockets (dangerous). This bypasses the proxy rules and
+exposes the full session/system buses.
+
+*-x*, *--no-x11*::
+Do not share X11 sockets.
+
+*--no-dri*::
+Do not share DRI nodes.
+
+*--no-audio*::
+Do not share PipeWire/PulseAudio sockets.
+
+*--no-wayland*::
+Do not share Wayland sockets.
+
+*-b*, *--dbus-session-rules*::
+Following `--{talk,own,see,call}=` options are passed to xdg-dbus-proxy
+for the session bus.
+
+*-B*, *--dbus-system-rules*::
+Following `--{talk,own,see,call}=` options are passed to xdg-dbus-proxy
+for the system bus.
+
+*-e*, *--dbus-rules-end*::
+End D-Bus rule collection; subsequent `--{talk,own,see,call}=` options
+are treated as errors.
+
+*--talk=RULE*, *--own=RULE*, *--see=RULE*, *--call=RULE*::
+Rules passed to xdg-dbus-proxy. Must appear after `-b` or `-B` and before `-e`.
+(Can be specified multiple times)
+
+*--debug-dbus*::
+Show D-Bus proxy logs (passes `--log` to *xdg-dbus-proxy(1)*).
+Conflicts with `-D`.
+
+*-H*, *--real-hostname*::
+Do not mangle the hostname in the sandbox.
+
+*--hostname* _hostname_::
+Use a specific hostname inside the sandbox.
+
+*--pki* _ro|rw|isolate_::
+Control PKI database sharing. `ro` binds `~/.pki` read-only, `rw` binds it
+read-write, and `isolate` does not bind it.
+
+*--no-gui-workarounds*::
+Disable all GUI workarounds.
+
+*--no-gtk-config*::
+Do not read-only share user GTK configs.
+
+*--no-icons*::
+Do not read-only share user icons.
+
+*--no-fonts*::
+Do not read-only share user fonts.
+
+*--no-fontconfig*::
+Do not read-only share user fontconfig configs.
+
+*--no-ibus*::
+Do not set `IBUS_USE_PORTAL=1`.
+
+*--fakeroot*::
+Mock uid/gid to 0 in the sandbox.
+
+*-N*, *--nested*::
+Allow nested user-namespace creation inside the sandbox.
+
+*-S*, *--no-new-session*, *--interactive-shell*::
+Do not pass `--new-session` and do pass `--die-with-parent` to Bubblewrap.
+Default on for the default command, default off for user-specified commands.
+
+*-v*, *--verbose*::
+Enable verbose mode.
+
+*-V*, *--version*::
+Print version.
+
+*-h*, *--help*::
+Show help text.
+
+*--* _command..._::
+Command to run inside the sandbox. Default is `$SHELL -l`.
+
+== RULES AND CONSTRAINTS
+
+- Sandbox names must match: `^[a-zA-Z0-9_.-]+$`.
+- When the sandbox name is provided without `-n`, it must be the last option.
+- D-Bus rule options (`--talk/--own/--see/--call`) must be placed between
+  `-b` or `-B` and `-e`.
+
+== SECURITY NOTES
+
+- Prefer the default D-Bus proxy. `--share-raw-dbus` exposes the full bus and
+  weakens sandboxing significantly.
+- The default GUI sharing behavior binds host sockets. If you want a tighter
+  sandbox, start with `--no-x11 --no-wayland --no-audio` and selectively add
+  shares.
+- `--fakeroot` only remaps uid/gid inside the sandbox. It does not grant real
+  host privileges.
+
+== FILES
+
+`~/.config/sandbox.sh.rc`::
+Global user configuration.
+
+`~/.config/sandbox.sh.d/sbox.<sandbox name>.rc`::
+Per-sandbox configuration.
+
+`/usr/share/sandbox-sh/template.sandbox.rc`::
+Template with supported configuration variables.
+
+`/usr/share/sandbox-sh/template.steam_client.rc`::
+Example config for Steam client use.
+
+== CONFIGURATION
+
+Configuration files are Bash snippets that set variables used by *sandbox.sh*.
+Common toggles include `SHARE_X11`, `SHARE_DRI`, `SHARE_AUDIO`, `SHARE_WAYLAND`,
+`SHARE_RAW_DBUS`, `NESTED`, `FAKEROOT`, `VERBOSE`, and GUI sharing flags like
+`GUI_GTK_CONFIG`, `GUI_ICONS`, `GUI_FONTS`, `GUI_FONTCONFIG`, and `GUI_IBUS_ENV`.
+You can also override `HOSTNAME` and `SANDBOX_DIR` from config.
+
+Array options allow adding paths and proxy rules:
+`EXTRA_SHARES`, `EXTRA_SHARES_RO`, `EXTRA_BWRAP_OPTIONS`,
+`DBUS_PROXY_SESSION_OPTIONS`, `DBUS_PROXY_SYSTEM_OPTIONS`.
+
+Example global config:
+----
+# ~/.config/sandbox.sh.rc
+SHARE_X11=0
+EXTRA_SHARES+=("$HOME/Projects")
+DBUS_PROXY_SESSION_OPTIONS+=(--talk=org.freedesktop.Notifications)
+----
+
+Example per-sandbox config:
+----
+# ~/.config/sandbox.sh.d/sbox.games.rc
+EXTRA_SHARES_RO+=("$HOME/Games")
+----
+
+----
+# ~/.config/sandbox.sh.d/sbox.steam.rc
+# Steam client requires user-namespace
+NESTED=1
+
+#EXTRA_SHARES+=(/mnt/external_game_db)
+
+# Steam client requires the following dbus names
+DBUS_PROXY_SESSION_OPTIONS+=(
+    --own='com.steampowered.PressureVessel.LaunchAlongsideSteam.*'
+)
+----
+
+== EXAMPLES
+
+Start a sandboxed shell:
+----
+sandbox.sh demo
+----
+
+Run a command:
+----
+sandbox.sh demo -- /usr/bin/ls -la
+----
+
+Share a directory:
+----
+sandbox.sh demo -s "$HOME/Downloads"
+----
+
+Use per-sandbox config:
+----
+cp /usr/share/sandbox-sh/template.sandbox.rc ~/.config/sandbox.sh.d/sbox.demo.rc
+----
+
+Run a GUI app without X11 (Wayland only):
+----
+sandbox.sh --no-x11 demo -- /usr/bin/foo
+----
+
+Add a D-Bus allow rule for d-spy:
+----
+sandbox.sh -n demo -b --own=org.gnome.dspy -e -- /usr/bin/d-spy
+----
+
+== SEE ALSO
+
+bwrap(1), xdg-dbus-proxy(1)

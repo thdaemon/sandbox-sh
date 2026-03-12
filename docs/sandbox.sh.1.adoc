@@ -21,8 +21,8 @@ optional per-sandbox file.
 
 By default, *sandbox.sh*:
 
-- Creates a sandbox home at `~/Sandbox/<sandbox name>` and binds it to `$HOME`
-  inside the sandbox.
+- Creates a sandbox home at `~/Sandbox/<sandbox name>` (or `--sandbox-dir`) and
+  binds it to `$HOME` inside the sandbox.
 - Uses a filtered D-Bus proxy (not raw sockets).
 - Shares X11, Wayland, DRI, and audio if the corresponding host sockets exist.
 - Runs `$SHELL -l` in current session (see *--no-new-session*).
@@ -41,6 +41,10 @@ Share a host directory read-only. (Can be specified multiple times)
 *-D*, *--share-raw-dbus*::
 Share unfiltered D-Bus sockets (dangerous). This bypasses the proxy rules and
 exposes the full session/system buses.
+
+*--sandbox-dir* _dir_::
+Use a specific directory as the sandbox home (binds to `$HOME` inside the
+sandbox). Default is `~/Sandbox/<sandbox name>`.
 
 *-x*, *--no-x11*::
 Do not share X11 sockets.

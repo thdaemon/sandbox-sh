@@ -14,6 +14,7 @@ declare -i NO_NEW_SESSION=0
 HOSTNAME=""
 SANDBOX_DIR=""
 
+declare -i BIND_RESOLV_CONF=1
 declare -i SHARE_X11=1
 declare -i SHARE_DRI=1
 declare -i SHARE_AUDIO=1
@@ -85,6 +86,7 @@ OPTIONS:
                                     (not impl)
     --sandbox-dir <dir>            Use specificed dir as in-sandbox new HOME
                                     insteads of ~/Sandbox/<sandbox name>
+    --no-bind-resolv-conf          Do not dev-bind /etc/resolv.conf
     -x, --no-x11                   Do not share X11 sockets and credentials
     --no-dri                       Do not share DRI nodes
     --no-audio                     Do not share PipeWire/PulseAudio sockets
@@ -160,6 +162,9 @@ while [[ -n "$1" ]]; do
     --sandbox-dir)
         SANDBOX_DIR="$1"
         shift
+        ;;
+    --no-bind-resolv-conf)
+        BIND_RESOLV_CONF=0
         ;;
     -x|--no-x11)
         SHARE_X11=0
@@ -364,6 +369,7 @@ for i in /lib /lib64 /bin /sbin; do
     fi
 done
 
+(( BIND_RESOLV_CONF )) && add_bubblewrap_bind --dev-bind /etc/resolv.conf /etc/resolv.conf
 
 if (( SHARE_X11 )) && [[ -n "$DISPLAY" ]]; then
     DISPLAY="${DISPLAY#localhost:}"

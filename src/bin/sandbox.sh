@@ -53,7 +53,7 @@ PIPEWIRE_RUNTIME_DIR="${PIPEWIRE_RUNTIME_DIR:-"${XDG_RUNTIME_DIR}"}"
 # shellcheck disable=SC1091
 [[ -f "${XDG_CONFIG_HOME}/sandbox.sh.rc" ]] && source "${XDG_CONFIG_HOME}/sandbox.sh.rc"
 
-VERSION=0.5.3
+VERSION=0.5.4
 function print_help {
     cat <<EOF
 sandbox.sh - An easy-to-use unprivileged sandbox bootstrapper powered by 
@@ -343,8 +343,12 @@ BWRAP_OPTIONS+=(
     --proc /proc
     --dev /dev
     --ro-bind /sys /sys
-    --tmpfs "${XDG_RUNTIME_DIR}"
-    --tmpfs /tmp
+    --dir /tmp
+    --dir /var
+    --dir /var/tmp
+    --dir /run
+    --symlink /run /var/run
+    --dir "${XDG_RUNTIME_DIR}"
 )
 
 (( SHARE_DRI )) && add_bubblewrap_bind --dev-bind /dev/dri /dev/dri
@@ -353,7 +357,6 @@ add_bubblewrap_bind --ro-bind /usr
 add_bubblewrap_bind --ro-bind /opt
 add_bubblewrap_bind --ro-bind /etc
 add_bubblewrap_bind --ro-bind /var/cache
-BWRAP_OPTIONS+=(--dir /var/tmp)
 
 for i in /lib /lib64 /bin /sbin; do
     [[ -e "$i" ]] || continue

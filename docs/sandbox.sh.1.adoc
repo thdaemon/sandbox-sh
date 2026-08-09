@@ -162,6 +162,9 @@ Template with supported configuration variables.
 `/usr/share/sandbox-sh/template.steam_client.rc`::
 Example config for Steam client use.
 
+`/usr/local/share/bash-completion/completions/sandbox.sh`::
+Bash completion script for *sandbox.sh*.
+
 == CONFIGURATION
 
 Configuration files are Bash snippets that set variables used by *sandbox.sh*.

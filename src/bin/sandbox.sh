@@ -53,7 +53,7 @@ PIPEWIRE_RUNTIME_DIR="${PIPEWIRE_RUNTIME_DIR:-"${XDG_RUNTIME_DIR}"}"
 # shellcheck disable=SC1091
 [[ -f "${XDG_CONFIG_HOME}/sandbox.sh.rc" ]] && source "${XDG_CONFIG_HOME}/sandbox.sh.rc"
 
-VERSION=0.5.5
+VERSION=0.5.6
 function print_help {
     cat <<EOF
 sandbox.sh - An easy-to-use unprivileged sandbox bootstrapper powered by 
@@ -86,7 +86,7 @@ OPTIONS:
                                     (not impl)
     --sandbox-dir <dir>            Use specificed dir as in-sandbox new HOME
                                     insteads of ~/Sandbox/<sandbox name>
-    --no-bind-resolv-conf          Do not dev-bind /etc/resolv.conf
+    --no-bind-resolv-conf          Do not ro-bind realpath of /etc/resolv.conf
     -x, --no-x11                   Do not share X11 sockets and credentials
     --no-dri                       Do not share DRI nodes
     --no-audio                     Do not share PipeWire/PulseAudio sockets
@@ -372,7 +372,7 @@ for i in /lib /lib64 /bin /sbin; do
     fi
 done
 
-(( BIND_RESOLV_CONF )) && add_bubblewrap_bind --dev-bind /etc/resolv.conf /etc/resolv.conf
+(( BIND_RESOLV_CONF )) && add_bubblewrap_bind --ro-bind-try /etc/resolv.conf "$(realpath /etc/resolv.conf)"
 
 if (( SHARE_X11 )) && [[ -n "$DISPLAY" ]]; then
     DISPLAY="${DISPLAY#localhost:}"

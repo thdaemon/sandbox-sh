@@ -47,7 +47,7 @@ Use a specific directory as the sandbox home (binds to `$HOME` inside the
 sandbox). Default is `~/Sandbox/<sandbox name>`.
 
 *--no-bind-resolv-conf*::
-Do not dev-bind /etc/resolv.conf to sandbox.
+Do not read-only bind real path of /etc/resolv.conf into the sandbox.
 
 *-x*, *--no-x11*::
 Do not share X11 sockets.

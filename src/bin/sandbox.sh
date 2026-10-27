@@ -53,7 +53,7 @@ PIPEWIRE_RUNTIME_DIR="${PIPEWIRE_RUNTIME_DIR:-"${XDG_RUNTIME_DIR}"}"
 # shellcheck disable=SC1091
 [[ -f "${XDG_CONFIG_HOME}/sandbox.sh.rc" ]] && source "${XDG_CONFIG_HOME}/sandbox.sh.rc"
 
-VERSION=0.5.6
+VERSION=0.5.7
 function print_help {
     cat <<EOF
 sandbox.sh - An easy-to-use unprivileged sandbox bootstrapper powered by 
@@ -294,7 +294,11 @@ fi
 
 RCFILE="${XDG_CONFIG_HOME%/}/sandbox.sh.d/sbox.${SANDBOX_NAME}.rc"
 # shellcheck disable=SC1090
-[[ -f "${RCFILE}" ]] && source "${RCFILE}"
+if [[ -f "${RCFILE}" ]]; then
+    pushd "${XDG_CONFIG_HOME%/}/sandbox.sh.d" >/dev/null
+    source "${RCFILE}"
+    popd >/dev/null
+fi
 
 set -e
 

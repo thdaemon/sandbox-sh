@@ -150,11 +150,16 @@ Command to run inside the sandbox. Default is `$SHELL -l`.
 
 == FILES
 
-`~/.config/sandbox.sh.rc`::
-Global user configuration.
+`${XDG_CONFIG_HOME}/sandbox.sh.rc`::
+Global user configuration (defaults to `~/.config/sandbox.sh.rc`).
 
-`~/.config/sandbox.sh.d/sbox.<sandbox name>.rc`::
-Per-sandbox configuration.
+`${XDG_CONFIG_HOME}/sandbox.sh.d/sbox.<sandbox name>.rc`::
+Per-sandbox configuration (defaults to
+`~/.config/sandbox.sh.d/sbox.<sandbox name>.rc`). While this file is loaded,
+the working directory is
+`${XDG_CONFIG_HOME}/sandbox.sh.d`. This lets the file source shared
+configuration by a relative path, so multiple sandboxes can reuse common
+settings. The original working directory is restored after the file is loaded.
 
 `/usr/share/sandbox-sh/template.sandbox.rc`::
 Template with supported configuration variables.
@@ -196,12 +201,27 @@ EXTRA_SHARES_RO+=("$HOME/Games")
 # Steam client requires user-namespace
 NESTED=1
 
+# Steam client requires XWayland so we need re-enable X11 access
+# when unsharing X11 in global config.
+SHARE_X11=1
+
 #EXTRA_SHARES+=(/mnt/external_game_db)
 
 # Steam client requires the following dbus names
 DBUS_PROXY_SESSION_OPTIONS+=(
     --own='com.steampowered.PressureVessel.LaunchAlongsideSteam.*'
 )
+
+# You can export env-vars for the sandbox in rc file
+export PROTON_USE_WAYLAND=1
+----
+
+Per-sandbox files can source shared configuration relative to
+`${XDG_CONFIG_HOME}/sandbox.sh.d`:
+----
+# ~/.config/sandbox.sh.d/sbox.games.rc
+source common.rc
+EXTRA_SHARES_RO+=("$HOME/Games")
 ----
 
 == EXAMPLES
@@ -218,12 +238,13 @@ sandbox.sh demo -- /usr/bin/ls -la
 
 Share a directory:
 ----
-sandbox.sh demo -s "$HOME/Downloads"
+sandbox.sh -s "$HOME/Downloads" demo
 ----
 
 Use per-sandbox config:
 ----
-cp /usr/share/sandbox-sh/template.sandbox.rc ~/.config/sandbox.sh.d/sbox.demo.rc
+cp /usr/share/sandbox-sh/template.sandbox.rc \
+    "${XDG_CONFIG_HOME:-$HOME/.config}/sandbox.sh.d/sbox.demo.rc"
 ----
 
 Run a GUI app without X11 (Wayland only):
